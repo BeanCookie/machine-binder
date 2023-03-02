@@ -1,7 +1,11 @@
-<script setup>
-</script>
-
 <template>
+    <div>
+        <button @click="openBluetoothScan()">扫描蓝牙</button>
+        <h4>{{ qrCodeText }}</h4>
+        <div v-if="device">
+            <p>Device Name: {{ device.id }} / {{ device.name }}</p>
+        </div>
+    </div>
     <div class="page-scan">
         <!-- 扫码区域 -->
         <div class="QrCode">
@@ -16,13 +20,14 @@
                 <div class="angle"></div>
             </div>
         </div>
-        <div>
-            <h4>{{ qrCodeTest }}</h4>
-        </div>
     </div>
 </template>
 
 <style lang="scss" scope>
+.btn {
+    z-index: 999;
+}
+
 .QrCode {
     width: 100vw;
     height: 100vh;
@@ -36,7 +41,7 @@
 }
 
 .Qr_scanner {
-    position: fixed;
+    position: relative;
     top: 0;
     left: 0;
     right: 0;
@@ -161,23 +166,33 @@
 <script>
 import 'webrtc-adapter'
 import { BrowserMultiFormatReader } from '@zxing/library'
+import { useBluetooth } from '@vueuse/core'
+const {
+    isConnected,
+    device,
+    requestDevice,
+    server,
+} = useBluetooth({
+    acceptAllDevices: true,
+})
 export default {
     name: 'app',
     data() {
         return {
             codeReader: null,
-            qrCodeTest: "",
+            qrCodeText: "",
+            device: device,
         }
     },
     mounted() {
         this.codeReader = new BrowserMultiFormatReader()
-        this.openScan()
+        this.openQRCodeScan()
     },
     beforeUnmount() {
         this.codeReader && this.codeReader.reset()
     },
     methods: {
-        async openScan() {
+        async openQRCodeScan() {
             this.codeReader
                 .listVideoInputDevices()
                 .then((videoInputDevices) => {
@@ -209,7 +224,7 @@ export default {
                 (result, err) => {
                     if (result) {
                         console.log('扫描结果', result)
-                        this.qrCodeTest = result
+                        this.qrCodeText = result
                     }
                     if (err && !err) {
                         console.error(err)
@@ -221,7 +236,10 @@ export default {
         clickIndexLeft(result) {
             this.codeReader && this.codeReader.reset()
             this.codeReader = null
-        }
+        },
+        openBluetoothScan() {
+            requestDevice();
+        },
     }
 }
 </script>
